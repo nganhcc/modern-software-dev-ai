@@ -14,8 +14,14 @@ the function is_valid_password(password: str) -> bool. No prose or comments.
 Keep the implementation minimal.
 """
 
-# TODO: Fill this in!
-YOUR_REFLEXION_PROMPT = ""
+YOUR_REFLEXION_PROMPT = """
+You are revising a Python function based on test failures.
+Output ONLY a single fenced Python code block that defines
+the function is_valid_password(password: str) -> bool.
+Fix the implementation so it satisfies the reported failures.
+Do not include prose or comments.
+Keep the implementation minimal and correct.
+"""
 
 
 # Ground-truth test suite used to evaluate generated code

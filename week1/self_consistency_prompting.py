@@ -9,7 +9,9 @@ load_dotenv()
 NUM_RUNS_TIMES = 5
 
 # TODO: Fill this in! Try to get as close to 100% correctness across all runs as possible.
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """You are excellent math solver; Compute the result carefully; 
+Think step by step; Try 5 different way of reasoning for the given problem; Then aggregate
+the most common result. The last line must be in the form: Answer:<number>"""
 
 USER_PROMPT = """
 Solve this problem, then give the final answer on the last line as "Answer: <number>".

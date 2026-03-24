@@ -7,7 +7,15 @@ load_dotenv()
 NUM_RUNS_TIMES = 5
 
 # TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """
+You will reverse the order of letters in a word. Return only the reversed word, no explaination, no punctuation, no extra text. 
+
+Ex: cat-> tac
+dog-> god
+prompt->tpmorp
+adidas -> sadida
+httpstatus -> sutatsptth
+"""
 
 USER_PROMPT = """
 Reverse the order of letters in the following word. Only output the reversed word, no other text:

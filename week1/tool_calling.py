@@ -69,8 +69,19 @@ TOOL_REGISTRY: Dict[str, Callable[..., str]] = {
 # Prompt scaffolding
 # ==========================
 
-# TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """You are a tool-calling assistant.
+Your job is to respond with exactly one JSON object and nothing else.
+
+Available tool:
+- output_every_func_return_type
+  Args:
+    - file_path: string
+
+Return this exact shape:
+{"tool":"output_every_func_return_type","args":{"file_path":"week1/tool_calling.py"}}
+
+Do not include markdown, code fences, explanations, or extra text.
+"""
 
 
 def resolve_path(p: str) -> str:

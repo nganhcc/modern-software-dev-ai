@@ -36,8 +36,13 @@ QUESTION = (
 )
 
 
-# TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = (
+    "You are a precise Python coding assistant. Use only the provided context. "
+    "Return exactly one fenced Python code block containing the required imports and a "
+    "function `fetch_user_name(user_id: str, api_key: str) -> str` that sends a GET request "
+    "to the documented `/users/{id}` endpoint with the `X-API-Key` header, calls "
+    "`raise_for_status()`, and returns the `name` field from the JSON response."
+)
 
 
 # For this simple example
