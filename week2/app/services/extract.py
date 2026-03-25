@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import os
 import re
-from typing import List
 import json
-from typing import Any
+from typing import Any, Dict, List
 from ollama import chat
 from dotenv import load_dotenv
 
@@ -16,6 +15,18 @@ KEYWORD_PREFIXES = (
     "action:",
     "next:",
 )
+
+DEFAULT_OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+LLM_RESPONSE_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "action_items": {
+            "type": "array",
+            "items": {"type": "string"},
+        }
+    },
+    "required": ["action_items"],
+}
 
 
 def _is_action_line(line: str) -> bool:
@@ -54,16 +65,63 @@ def extract_action_items(text: str) -> List[str]:
                 continue
             if _looks_imperative(s):
                 extracted.append(s)
-    # Deduplicate while preserving order
-    seen: set[str] = set()
-    unique: List[str] = []
-    for item in extracted:
-        lowered = item.lower()
-        if lowered in seen:
-            continue
-        seen.add(lowered)
-        unique.append(item)
-    return unique
+    return _dedupe_preserve_order(extracted)
+
+
+def extract_action_items_llm(text: str) -> List[str]:
+    result = extract_action_items_llm_with_meta(text)
+    return result["items"]
+
+
+def extract_action_items_llm_with_meta(text: str) -> Dict[str, Any]:
+    raw_text = text.strip()
+    if not raw_text:
+        return {
+            "items": [],
+            "extraction_method": "rules",
+            "fallback_reason": "empty input",
+        }
+
+    prompt = (
+        "Extract only actionable tasks from the input text. "
+        "Return concise action items with no numbering or bullets. "
+        "Ignore narrative lines that are not actions."
+    )
+
+    fallback_reason: str | None = None
+    try:
+        response = chat(
+            model=DEFAULT_OLLAMA_MODEL,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": raw_text},
+            ],
+            format=LLM_RESPONSE_SCHEMA,
+            options={"temperature": 0},
+        )
+
+        response_content = str(response.get("message", {}).get("content", "")).strip()
+        parsed = json.loads(response_content)
+        llm_items = parsed.get("action_items", []) if isinstance(parsed, dict) else []
+        if not isinstance(llm_items, list):
+            llm_items = []
+
+        normalized = _normalize_extracted_items(llm_items)
+        if normalized:
+            return {
+                "items": normalized,
+                "extraction_method": "llm",
+                "fallback_reason": None,
+            }
+        fallback_reason = "llm returned no usable action items"
+    except Exception as exc:  # pragma: no cover - exercised with mocks in tests
+        fallback_reason = f"llm extraction failed: {exc}"
+
+    return {
+        "items": extract_action_items(raw_text),
+        "extraction_method": "rules",
+        "fallback_reason": fallback_reason,
+    }
 
 
 def _looks_imperative(sentence: str) -> bool:
@@ -87,3 +145,31 @@ def _looks_imperative(sentence: str) -> bool:
         "investigate",
     }
     return first.lower() in imperative_starters
+
+
+def _normalize_extracted_items(items: List[Any]) -> List[str]:
+    cleaned_items: List[str] = []
+    for item in items:
+        if not isinstance(item, str):
+            continue
+        cleaned = item.strip()
+        if not cleaned:
+            continue
+        cleaned = BULLET_PREFIX_PATTERN.sub("", cleaned)
+        cleaned = cleaned.removeprefix("[ ]").strip()
+        cleaned = cleaned.removeprefix("[todo]").strip()
+        if cleaned:
+            cleaned_items.append(cleaned)
+    return _dedupe_preserve_order(cleaned_items)
+
+
+def _dedupe_preserve_order(items: List[str]) -> List[str]:
+    seen: set[str] = set()
+    unique: List[str] = []
+    for item in items:
+        lowered = item.lower()
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+        unique.append(item)
+    return unique
