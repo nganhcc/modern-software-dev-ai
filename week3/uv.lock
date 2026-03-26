@@ -1,0 +1,19 @@
+version = 1
+revision = 3
+requires-python = ">=3.13"
+
+[manifest]
+members = [
+    "weather",
+    "week3",
+]
+
+[[package]]
+name = "weather"
+version = "0.1.0"
+source = { virtual = "weather" }
+
+[[package]]
+name = "week3"
+version = "0.1.0"
+source = { virtual = "." }
