@@ -1,7 +1,6 @@
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
@@ -26,13 +25,21 @@ def create_note(payload: NoteCreate, db: Session = Depends(get_db)) -> NoteRead:
     return NoteRead.model_validate(note)
 
 
-@router.get("/search/", response_model=list[NoteRead])
-def search_notes(q: Optional[str] = None, db: Session = Depends(get_db)) -> list[NoteRead]:
-    if not q:
+@router.get("/search", response_model=list[NoteRead])
+@router.get("/search/", response_model=list[NoteRead], include_in_schema=False)
+def search_notes(q: str | None = None, db: Session = Depends(get_db)) -> list[NoteRead]:
+    query = (q or "").strip()
+    if not query:
         rows = db.execute(select(Note)).scalars().all()
     else:
+        query_pattern = f"%{query.lower()}%"
         rows = (
-            db.execute(select(Note).where((Note.title.contains(q)) | (Note.content.contains(q))))
+            db.execute(
+                select(Note).where(
+                    func.lower(Note.title).like(query_pattern)
+                    | func.lower(Note.content).like(query_pattern)
+                )
+            )
             .scalars()
             .all()
         )
