@@ -4,10 +4,11 @@ async function fetchJSON(url, options) {
   return res.json();
 }
 
-async function loadNotes() {
+async function loadNotes(query = '') {
   const list = document.getElementById('notes');
   list.innerHTML = '';
-  const notes = await fetchJSON('/notes/');
+  const endpoint = query.trim() ? `/notes/search?q=${encodeURIComponent(query.trim())}` : '/notes/';
+  const notes = await fetchJSON(endpoint);
   for (const n of notes) {
     const li = document.createElement('li');
     li.textContent = `${n.title}: ${n.content}`;
@@ -47,6 +48,17 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     e.target.reset();
     loadNotes();
+  });
+
+  document.getElementById('note-search-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = document.getElementById('note-search').value;
+    await loadNotes(query);
+  });
+
+  document.getElementById('note-search-clear').addEventListener('click', async () => {
+    document.getElementById('note-search').value = '';
+    await loadNotes();
   });
 
   document.getElementById('action-form').addEventListener('submit', async (e) => {

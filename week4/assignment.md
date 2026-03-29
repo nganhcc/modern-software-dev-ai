@@ -57,6 +57,7 @@ pre-commit install
 ```
 
 3) Run the app (from `week4/` directory)
+//asdfasfasdasdf
 
 ```bash
 make run
